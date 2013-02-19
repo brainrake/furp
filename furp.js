@@ -1,16 +1,22 @@
+if (typeof window == 'undefined' || window === null) {
+  require('prelude-ls').installPrelude(global);
+} else {
+  prelude.installPrelude(window);
+}
 (function(){
-  var Signal, DomInput, Keyboard, Mouse, __;
-  import$(this, prelude);
-  Signal = function(){
+  var ___, API, Signal, Merge, Lift, Scan, DomEvent, Keyboard, Mouse, Frame, __;
+  ___ = function(it){
+    console.log.apply(console, arguments);
+    return it;
+  };
+  (window || (typeof module != 'undefined' && module !== null ? module.exports : void 8)).furp = API = {};
+  Signal = function(it){
     var SignalClass;
-    return (function(func, args, ctor) {
-      ctor.prototype = func.prototype;
-      var child = new ctor, result = func.apply(child, args), t;
-      return (t = typeof result)  == "object" || t == "function" ? result || child : child;
-  })(SignalClass = (function(){
+    return new (SignalClass = (function(){
       SignalClass.displayName = 'SignalClass';
       var prototype = SignalClass.prototype, constructor = SignalClass;
       function SignalClass(register){
+        var memo, send, this$ = this;
         this.sampleOn = bind$(this, 'sampleOn', prototype);
         this.latch = bind$(this, 'latch', prototype);
         this.throttle = bind$(this, 'throttle', prototype);
@@ -18,64 +24,69 @@
         this.count = bind$(this, 'count', prototype);
         this.dropRepeats = bind$(this, 'dropRepeats', prototype);
         this.foldp = bind$(this, 'foldp', prototype);
-        this.whenTrue = bind$(this, 'whenTrue', prototype);
+        this.keepWhen = bind$(this, 'keepWhen', prototype);
         this.keepIf = bind$(this, 'keepIf', prototype);
         this.lift = bind$(this, 'lift', prototype);
-        this['new'] = bind$(this, 'new', prototype);
-        this.send = bind$(this, 'send', prototype);
-        this.handlers = [];
-        register(this.send);
+        this._targets = [];
+        memo = void 8;
+        register(send = function(value){
+          var i$, ref$, len$, handle;
+          for (i$ = 0, len$ = (ref$ = this$._targets).length; i$ < len$; ++i$) {
+            handle = ref$[i$];
+            handle(value, memo);
+          }
+          return memo = value;
+        });
       }
-      prototype.send = function(value){
-        var i$, ref$, len$, handler;
-        this._value = value;
-        for (i$ = 0, len$ = (ref$ = this.handlers).length; i$ < len$; ++i$) {
-          handler = ref$[i$];
-          handler(value);
-        }
-        return this._memo = value;
-      };
-      prototype['new'] = function(adder){
+      prototype.lift = function(fn){
         var this$ = this;
         return Signal(function(send){
-          return this$.handlers.push(adder(send));
-        });
-      };
-      prototype.lift = function(fn){
-        return this['new'](function(send){
-          return function(value){
-            return send(fn(value));
-          };
+          return this$._targets.push(function(value, memo){
+            return send(fn(value, memo));
+          });
         });
       };
       prototype.keepIf = function(test){
-        return this['new'](function(send){
-          var this$ = this;
-          return function(value){
-            if (test(value)) {
-              return send(value);
-            }
-          };
+        var this$ = this;
+        test == null && (test = function(it){
+          return it;
+        });
+        return Signal(function(send){
+          return this$.lift(function(it){
+            return test(it) && send(it);
+          });
         });
       };
-      prototype.whenTrue = function(){
-        return this.keepIf(function(it){
-          return it;
+      prototype.keepWhen = function(signal){
+        var memo;
+        memo = void 8;
+        this.lift(function(it){
+          return memo = it;
+        });
+        return this.keepIf(function(){
+          return memo;
         });
       };
       prototype.foldp = function(def, fn){
-        var signal;
-        return signal = this['new'](function(send){
-          return function(value){
-            var ref$;
-            return send(fn(value, (ref$ = signal._memo) != null ? ref$ : def));
-          };
+        var memo, this$ = this;
+        memo = def;
+        return Signal(function(send){
+          return this$.lift(function(value){
+            memo = fn(value, memo);
+            return send(memo);
+          });
         });
       };
-      prototype.dropRepeats = function(def){
-        var signal, this$ = this;
-        return signal = this.keepIf(function(value){
-          return signal._memo !== value;
+      prototype.dropRepeats = function(){
+        var memo, this$ = this;
+        memo = void 8;
+        return Signal(function(send){
+          return this$.lift(function(it){
+            if (!_.isEqual(it, memo)) {
+              send(it);
+            }
+            return memo = it;
+          });
         });
       };
       prototype.count = function(){
@@ -84,114 +95,195 @@
         });
       };
       prototype.delay = function(ms){
-        return this['new'](function(send){
-          return function(value){
+        var this$ = this;
+        return Signal(function(send){
+          return this$.lift(function(value){
             return _.delay(function(){
               return send(value);
             }, ms);
-          };
+          });
         });
       };
       prototype.throttle = function(ms){
-        return this['new'](function(send){
-          return _.throttle(function(value){
-            return send(value);
-          }, ms);
+        var this$ = this;
+        return Signal(function(send){
+          return this$.lift(_.throttle(function(it){
+            return send(it);
+          }, ms));
         });
       };
       prototype.latch = function(ms){
-        var signal;
-        signal = this['new'](function(send){
-          var sendFalse;
-          sendFalse = _.debounce(function(){
+        var signal, this$ = this;
+        signal = Signal(function(send){
+          var sendNo;
+          sendNo = _.debounce(function(){
             return send(false);
           }, ms);
-          return function(value){
+          return this$.lift(function(){
             send(true);
-            return sendFalse();
-          };
+            return sendNo();
+          });
         });
         return signal.dropRepeats();
       };
       prototype.sampleOn = function(signal){
-        var this$ = this;
-        return this['new'](function(send){
-          signal.lift(function(){
-            return send(this$._value);
+        var state, this$ = this;
+        state = void 8;
+        this.lift(function(it){
+          return state = it;
+        });
+        return Signal(function(send){
+          return signal.lift(function(){
+            return send(state);
           });
-          return function(){};
         });
       };
       return SignalClass;
-    }()), arguments, function(){});
+    }()))(it);
   };
-  DomInput = function(event, el){
-    var this$ = this;
+  Merge = function(signals){
+    return Signal(function(send){
+      var i$, ref$, len$, signal, results$ = [];
+      for (i$ = 0, len$ = (ref$ = signals).length; i$ < len$; ++i$) {
+        signal = ref$[i$];
+        results$.push(signal.lift(fn$));
+      }
+      return results$;
+      function fn$(it){
+        return send(it);
+      }
+    });
+  };
+  Lift = curry$(function(fn, signals){
+    return Signal(function(send){
+      var state, i, signal;
+      return state = (function(){
+        var i$, ref$, len$, results$ = [];
+        for (i$ = 0, len$ = (ref$ = signals).length; i$ < len$; ++i$) {
+          i = i$;
+          signal = ref$[i$];
+          fn$(
+          i);
+          results$.push(void 8);
+        }
+        return results$;
+        function fn$(i){
+          return signal.lift(function(it){
+            state[i] = it;
+            return send(fn.apply(null, state));
+          });
+        }
+      }());
+    });
+  });
+  Scan = function(){};
+  DomEvent = function(event, el){
     el == null && (el = document);
     return Signal(function(send){
-      return $(el).on(event, send);
+      return $(el).on(event, function(it){
+        send(it);
+        return true;
+      });
     });
   };
   Keyboard = (function(){
     Keyboard.displayName = 'Keyboard';
     var prototype = Keyboard.prototype, constructor = Keyboard;
-    Keyboard.isDown = function(keyCode){
-      var updown;
-      updown = Signal(function(send){
-        var reg;
-        reg = function(event){
-          return DomInput(event).keepIf(function(event){
-            return event.keyCode === keyCode;
-          });
-        };
-        reg('keydown').lift(function(){
-          return send(true);
-        });
-        return reg('keyup').lift(function(){
-          return send(false);
-        });
-      });
-      return updown.dropRepeats();
+    Keyboard.isDown = function(keyCode, el){
+      var o, event, value;
+      return Merge(o = (function(){
+        var ref$, results$ = [];
+        for (event in ref$ = {
+          keydown: true,
+          keyup: false
+        }) {
+          value = ref$[event];
+          results$.push(DomEvent(event, el).keepIf(fn$).lift(fn1$));
+        }
+        return results$;
+        function fn$(it){
+          return it.keyCode === keyCode;
+        }
+        function fn1$(it){
+          return it.type === 'keydown';
+        }
+      }())).dropRepeats();
     };
-    Keyboard.arrows = function(){};
+    Keyboard.arrows = function(el){
+      var keymap, lifter, o, keyCode, value;
+      keymap = [[37, -1], [39, +1], [40, -1], [38, +1]];
+      lifter = Lift(function(left, right, down, up){
+        left == null && (left = 0);
+        right == null && (right = 0);
+        down == null && (down = 0);
+        up == null && (up = 0);
+        return [left + right, down + up];
+      });
+      return lifter(o = (function(){
+        var i$, ref$, len$, ref1$, results$ = [];
+        for (i$ = 0, len$ = (ref$ = keymap).length; i$ < len$; ++i$) {
+          ref1$ = ref$[i$], keyCode = ref1$[0], value = ref1$[1];
+          results$.push(fn$(
+          value));
+        }
+        return results$;
+        function fn$(value){
+          return Keyboard.isDown(keyCode * 1).lift(function(it){
+            if (it) {
+              return value;
+            } else {
+              return 0;
+            }
+          });
+        }
+      }()));
+    };
     function Keyboard(){}
     return Keyboard;
   }());
   Mouse = (function(){
     Mouse.displayName = 'Mouse';
-    var prototype = Mouse.prototype, constructor = Mouse;
-    Mouse.position = Signal(function(send){
-      var i$, ref$, len$, event, results$ = [];
+    var event, value, prototype = Mouse.prototype, constructor = Mouse;
+    Mouse.position = Merge((function(){
+      var i$, ref$, len$, results$ = [];
       for (i$ = 0, len$ = (ref$ = ['mousemove', 'mousedown', 'mouseup']).length; i$ < len$; ++i$) {
         event = ref$[i$];
-        results$.push(DomInput(event).lift(fn$));
+        results$.push(DomEvent(event).lift(fn$));
       }
       return results$;
       function fn$(it){
-        return send({
-          x: it.clientX,
-          y: it.clientY
-        });
+        return [it.clientX, it.clientY];
       }
-    });
-    Mouse.isDown = Signal(function(send){
-      DomInput('mousedown').lift(function(){
-        return send(true);
-      });
-      return DomInput('mouseup').lift(function(){
-        return send(false);
-      });
-    });
+    }()));
+    Mouse.isDown = Merge((function(){
+      var ref$, results$ = [];
+      for (event in ref$ = {
+        mousedown: true,
+        mouseup: false
+      }) {
+        value = ref$[event];
+        results$.push(DomEvent(event).lift(fn$));
+      }
+      return results$;
+      function fn$(){
+        return value;
+      }
+    }()));
     Mouse.isClicked = Signal(function(send){
-      return DomInput('click').lift(function(){
+      return DomEvent('click').lift(function(){
         send(true);
         return send(false);
       });
     });
-    Mouse.clicks = Mouse.isClicked.whenTrue();
+    Mouse.clicks = Mouse.isClicked.keepIf();
     function Mouse(){}
     return Mouse;
   }());
+  Frame = Signal(function(send){
+    return requestAnimationFrame(function(it){
+      return send(it);
+    });
+  });
   __ = function(it){
     console.log.apply(console, arguments);
     return it;
@@ -200,21 +292,40 @@
     return __('mouse position on click', it);
   });
   Mouse.position.latch(1000).lift(function(it){
-    if (it === true) {
-      return __('mouse is active');
-    } else {
-      return __('mouse is inactive: not moved in 1 sec');
+    switch (false) {
+    case !it:
+      return __('mouse active', it);
+    default:
+      return __('mouse inactive: not moved in 1 sec', it);
     }
   });
-  Keyboard.isDown(32).keepTrue().delay(500).count().lift(function(it){
-    return __('space presses (delayed): ', it);
+  Keyboard.isDown(32).keepIf().delay(500).count().lift(function(it){
+    return __('space presses (delayed by 500ms): ', it);
   });
-  function import$(obj, src){
-    var own = {}.hasOwnProperty;
-    for (var key in src) if (own.call(src, key)) obj[key] = src[key];
-    return obj;
-  }
+  Keyboard.arrows().lift(function(it){
+    return ___('arrows', it);
+  });
+  Keyboard.arrows().foldp([0, 0], function(value, memo){
+    return zipWith(curry$(function(x$, y$){
+      return x$ + y$;
+    }), value, memo);
+  }).dropRepeats().lift(function(it){
+    return __('pos', it);
+  });
   function bind$(obj, key, target){
     return function(){ return (target || obj)[key].apply(obj, arguments) };
+  }
+  function curry$(f, bound){
+    var context,
+    _curry = function(args) {
+      return f.length > 1 ? function(){
+        var params = args ? args.concat() : [];
+        context = bound ? context || this : this;
+        return params.push.apply(params, arguments) <
+            f.length && arguments.length ?
+          _curry.call(context, params) : f.apply(context, params);
+      } : f;
+    };
+    return _curry();
   }
 }).call(this);
