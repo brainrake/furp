@@ -102,7 +102,7 @@ html
             span.pull-right(data-signal='Mouse.position().sampleOn(furp.Mouse.clicks())')
           pre
             |Mouse.position()
-            |  .latch(1000)
+            |  .latch 1000
             span.pull-right(data-signal="Mouse.position().latch(1000)")
         .span4.ls
           h3.noall mouse
@@ -115,7 +115,7 @@ html
             |  .sampleOn Mouse.clicks!
             span.pull-right(data-signal='Mouse.position().sampleOn(furp.Mouse.clicks())')
           pre
-            |Mouse.position()
+            |Mouse.position!
             |  .latch 1000
             span.pull-right(data-signal="Mouse.position().latch(1000)")
 
