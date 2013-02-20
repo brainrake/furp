@@ -1,19 +1,20 @@
-#import prelude
+import prelude
 ___ = -> console.log ...arguments; it
-(window or module?exports).furp = API = {}
+(window or module?exports).furp = API ||= {}
 
-
-Signal = -> new (class SignalClass
-  (register) ->
+API.Signal = Signal = -> new SignalClass it
+API.SignalClass = class SignalClass
+  (setup) ->
     @_targets = []
-    memo = void
-    register send = (value) ~>
-      for handle in @_targets => handle value, memo
-      memo := value
+    setup send = ~>
+      @_state = it
+      if it? => for handle in @_targets => handle ...arguments
+      it
 
   lift: (fn) ~>
     Signal (send) ~>
-      @_targets.push (value, memo) -> send fn value, memo
+      @_targets.push -> send fn it
+      if @_state? => send fn @_state
 
   keep-if: (test = -> it) ~>
     Signal (send) ~>
@@ -21,7 +22,7 @@ Signal = -> new (class SignalClass
 
   keep-when: (signal) ~>
     memo = void
-    @lift -> memo := it
+    signal.lift -> memo := it
     @keep-if -> memo
 
   foldp: (def, fn) ~>
@@ -30,6 +31,7 @@ Signal = -> new (class SignalClass
       @lift (value) ~>
         memo := fn value, memo
         send memo
+      #send (fn def, @_state)
 
   drop-repeats: ~>
     memo = void
@@ -37,6 +39,9 @@ Signal = -> new (class SignalClass
       @lift ->
         if not (_.isEqual it, memo) then send it
         memo := it
+
+  merge: (...signals) ~>
+    Merge @_state, [this, ...signals]
 
   count: ~>
     @foldp 0, (value, memo) ->
@@ -56,43 +61,59 @@ Signal = -> new (class SignalClass
       @lift -> send yes; send-no!
     signal.drop-repeats!
 
-  sample-on: (signal) ~>
+  sample-on: (signal, fn = -> it) ~>
     state = void
     @lift -> state := it
     Signal (send) ~>
-      signal.lift ~> send state
-) it
+      signal.lift ~> send fn state, it
 
-Merge = (signals) ->
+  __: (key, title = '') -> # log helper
+    @keep-when Keyboard.is-down key
+      .lift -> ___ prefix, it.toString()
+    this
+
+API.Merge = Merge = (def, signals) ->
   Signal (send) ->
     for signal in signals
       signal.lift -> send it
+    send def
 
-Lift = (fn, signals) -->
+API.Lift = Lift = (fn, signals) -->
+  state = [void for s in signals]
   Signal (send) ->
-    state = for signal, i in signals
+    for signal, i in signals
       i |> (i) -> signal.lift -> state[i] = it; send fn ...state
-      void
 
 Scan = ->
 
 #
 
-DomEvent = (event, el = document) ->
+API.DomEvent = DomEvent = (event, el = document) ->
   Signal (send) ->
     $ el .on event, -> send it; true
 
 
-class Keyboard
-  @is-down = (keyCode, el) ->
-    Merge o= for event, value of {keydown: yes, keyup:no}
+API.Keyboard = class Keyboard
+  @is-down = (key, el) ->
+    keyCode = if _.isString key then key.charCodeAt 0 else key
+    Merge no, o= for event, value in [\keydown \keyup]
       DomEvent event, el
-        .keep-if -> it.keyCode == keyCode
-        .lift -> it.type == \keydown
+        .keep-if -> it?keyCode == keyCode
+        .lift -> it?type == \keydown
     .drop-repeats!
 
+  @is-pressed = (keyCode, el) ->
+    Signal (send) ->
+      Keyboard.isDown keyCode, el
+        .keep-if!
+        .lift -> send yes; send no
+
+  @presses = (keyCode, el) ->
+    Keyboard.isDown keyCode, el
+      .keep-if!
+
   @arrows = (el) ->
-    keymap = [[37 -1] [39 +1] [40 -1] [38 +1]]
+    keymap =      [[37 -1] [39 +1]  [40 -1] [38 +1]]
     lifter = Lift (left=0, right=0, down=0, up=0) ->
       [left + right, down + up]
     lifter o= for [keyCode, value] in keymap
@@ -101,48 +122,24 @@ class Keyboard
           .lift -> if it then value else 0
 
 
-class Mouse
-  @position =
-    Merge <| for event in [\mousemove \mousedown \mouseup]
-      DomEvent event .lift -> [it.clientX, it.clientY]
-  @is-down =
-    Merge <| for event, value of {mousedown: yes, mouseup: no}
-      DomEvent event .lift -> value
-  @is-clicked =
+API.Mouse = class Mouse
+  @position = (el) ->
+    Merge [0, 0], o= for event in [\mousemove \mousedown \mouseup]
+      (DomEvent event, el).lift -> [it.pageX, it.pageY] if it?
+  @is-down = (el) ->
+    Merge no, o= for event in [\mousedown \mouseup]
+      DomEvent event, el .lift -> it?type is \mousedown
+  @is-clicked = (el) ->
     Signal (send) ->
-      DomEvent \click .lift -> send yes; send no
-  @clicks =
-    Mouse.isClicked.keep-if!
+      (DomEvent \click, el).lift -> send yes; send no
+  @clicks = (el) ->
+    (Mouse.isClicked el).keep-if!
 
 
-Frame = Signal (send) ->
-  requestAnimationFrame -> send it
-
-# examples
-
-
-__ = -> console.log ...arguments;  it
-
-Mouse.position
-  .sample-on Mouse.clicks
-  .lift -> __ 'mouse position on click', it
-
-Mouse.position
-  .latch 1000
-  .lift -> | it => __ 'mouse active', it
-           | _  => __ 'mouse inactive: not moved in 1 sec', it
-
-Keyboard.is-down 32
-  .keep-if!
-  .delay 500
-  .count!
-  .lift -> __ 'space presses (delayed by 500ms): ', it
-
-Keyboard.arrows!
-  .lift -> ___ 'arrows', it
-
-Keyboard.arrows!
-  .foldp [0, 0], (value, memo) ->
-    zipWith (+), value, memo
-  .drop-repeats!
-  .lift -> __ 'pos', it
+API.Time = class Time
+  @frame = ->
+    if not @_frame? => @_frame = Signal (send) ->
+      fn = -> requestAnimationFrame (-> send it; fn!)
+      fn!
+    @_frame
+  @delta = ->

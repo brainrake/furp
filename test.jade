@@ -1,0 +1,151 @@
+!!! 5
+html
+  head
+    meta(charset="utf-8")
+    link(href="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.0/css/bootstrap-combined.min.css", rel="stylesheet")
+    link(href="//netdna.bootstrapcdn.com/bootswatch/2.3.0/cosmo/bootstrap.min.css", rel="stylesheet")
+    style
+      pre {color:black}
+      span[data-signal] {color:#369}
+      #ct     .js, #ct     .cs, #ct     .ls, #ct     .all {display:none}
+      #ct.js  .js, #ct.cs  .cs, #ct.ls  .ls, #ct.all .all {display:block}
+      #ct.all .js, #ct.all .cs, #ct.all .ls {display:block}
+      #ct.all .noall{display:none}
+      //#ct h3 {width: 25%}
+      //#ct.all h3 {width: 100%}
+  body
+    .navbar
+      .navbar-inner
+        a.brand(href="#") furp |> dom input
+        .span4.pull-right
+          #lang.btn-group(data-toggle="buttons-radio")
+            button.btn(type="button") js
+            button.btn.active(type="button") cs
+            button.btn(type="button") ls
+            button.btn(type="button") all
+
+    #ct.container.cs
+      .row.all
+        .span4: h4.text-center javascript
+        .span4: h4.text-center coffeescript
+        .span4: h4.text-center livescript
+      .row
+        h3.all keyboard
+          small &nbsp; press space
+        .span4.js
+          h3.noall keyboard
+            small &nbsp; press space
+          pre Keyboard.isDown(32)
+            span.pull-right(data-signal="Keyboard.isDown(32)")
+          pre Keyboard.isDown(' ')
+            span.pull-right(data-signal="Keyboard.isDown(' ')")
+          pre Keyboard.arrows()
+            span.pull-right(data-signal="Keyboard.arrows()")
+          pre
+            |Keyboard.presses(' ')
+            |  .delay(500)
+            |  .count()
+            span.pull-right(data-signal="Keyboard.presses(' ').delay(500).count()")
+        .span4.cs
+          h3.noall keyboard
+            small &nbsp; press space
+          pre Keyboard.isDown 32
+            span.pull-right(data-signal="Keyboard.isDown(32)")
+          pre Keyboard.isDown ' '
+            span.pull-right(data-signal="Keyboard.isDown(' ')")
+          pre Keyboard.arrows()
+            span.pull-right(data-signal="Keyboard.arrows()")
+          pre
+            |Keyboard.presses ' '
+            |  .delay 500
+            |  .count()
+            span.pull-right(data-signal="Keyboard.presses(' ').delay(500).count()")
+        .span4.ls
+          h3.noall keyboard
+            small &nbsp; press space
+          pre Keyboard.isDown 32
+            span.pull-right(data-signal="Keyboard.isDown(32)")
+          pre Keyboard.isDown ' '
+            span.pull-right(data-signal="Keyboard.isDown(' ')")
+          pre Keyboard.arrows!
+            span.pull-right(data-signal='Keyboard.arrows()')
+          pre
+            |Keyboard.presses ' '
+            |  .delay 500
+            |  .count!
+            span.pull-right(data-signal="Keyboard.presses(' ').delay(500).count()")
+
+        h3.all mouse
+        .span4.js
+          h3.noall mouse
+          pre Mouse.position()
+            span.pull-right(data-signal='Mouse.position()')
+          pre Mouse.isDown()
+            span.pull-right(data-signal='Mouse.isDown()')
+          pre
+            |Mouse.position()
+            |  .sampleOn(Mouse.clicks())
+            span.pull-right(data-signal='Mouse.position().sampleOn(furp.Mouse.clicks())')
+          pre
+            |Mouse.position()
+            |  .latch(1000)
+            span.pull-right(data-signal="Mouse.position().latch(1000)")
+        .span4.cs
+          h3.noall mouse
+          pre Mouse.position()
+            span.pull-right(data-signal='Mouse.position()')
+          pre Mouse.isDown()
+            span.pull-right(data-signal='Mouse.isDown()')
+          pre
+            |Mouse.position()
+            |  .sampleOn Mouse.clicks()
+            span.pull-right(data-signal='Mouse.position().sampleOn(furp.Mouse.clicks())')
+          pre
+            |Mouse.position()
+            |  .latch(1000)
+            span.pull-right(data-signal="Mouse.position().latch(1000)")
+        .span4.ls
+          h3.noall mouse
+          pre Mouse.position!
+            span.pull-right(data-signal='Mouse.position()')
+          pre Mouse.isDown!
+            span.pull-right(data-signal='Mouse.isDown()')
+          pre
+            |Mouse.position!
+            |  .sampleOn Mouse.clicks!
+            span.pull-right(data-signal='Mouse.position().sampleOn(furp.Mouse.clicks())')
+          pre
+            |Mouse.position()
+            |  .latch 1000
+            span.pull-right(data-signal="Mouse.position().latch(1000)")
+
+        h3.all time
+        .span4.js
+          h3.noall time
+          pre
+            |Time.frame()
+            |  .lift(function(it){
+            |     return it.toFixed()})
+            span.pull-right(data-signal="Time.frame().lift(function(it) {return it.toFixed()})")
+        .span4.cs
+          h3.noall time
+          pre
+            |Time.frame()
+            |  .lift (it) ->
+            |    it.toFixed()
+            span.pull-right(data-signal="Time.frame().lift(function(it) {return it.toFixed()})")
+        .span4.ls
+          h3.noall time
+          pre
+            |Time.frame()
+            |  .lift (.toFixed!)
+            br
+            span.pull-right(data-signal="Time.frame().lift(function(it) {return it.toFixed()})")
+            br
+
+    script(src="components/prelude-ls/prelude-browser.js")
+    script(src="components/lodash/lodash.js")
+    script(src="components/jquery/jquery.js")
+    script(src="//netdna.bootstrapcdn.com/twitter-bootstrap/2.3.0/js/bootstrap.min.js")
+    script(src="furp.js")
+    script(src="test.js")
