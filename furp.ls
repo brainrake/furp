@@ -11,49 +11,58 @@ API.SignalClass = class SignalClass
       if it? => for handle in @_targets => handle ...arguments
       it
 
-  lift: (fn) ~>
+  new: (fn) ~>
     Signal (send) ~>
-      @_targets.push -> send fn it
-      if @_state? => send fn @_state
+      new_send = (fn send)
+      @_targets.push -> new_send it
+      if @_state? then new_send @_state
+
+  lift: (fn) ~>
+    @new (send) ~> ~> send fn it
 
   keep-if: (test = -> it) ~>
-    Signal (send) ~>
-      @lift -> test it and send it
+    @lift -> if test it then it else undefined
 
   keep-when: (signal) ~>
-    memo = void
-    signal.lift -> memo := it
-    @keep-if -> memo
+    @keep-if -> signal._state
+
+  feedback: (fn) ~>
+    signal = @new (send) ->
+      new_send = (fn send)
+      (it) ->
+        | signal?_state? => new_send it, signal._state
+        | _              => new_send it, void
 
   foldp: (def, fn) ~>
-    memo = def
-    Signal (send) ~>
-      @lift (value) ~>
-        memo := fn value, memo
-        send memo
-      #send (fn def, @_state)
+    @feedback (send) -> (it, old=def) ->
+      send fn it, old
 
   drop-repeats: ~>
-    memo = void
-    Signal (send) ~>
-      @lift ->
-        if not (_.isEqual it, memo) then send it
-        memo := it
+    @feedback (send) -> (it, old=void) ->
+      if not (_.isEqual it, old) then send it
 
   merge: (...signals) ~>
     Merge @_state, [this, ...signals]
 
   count: ~>
-    @foldp 0, (value, memo) ->
-      memo + 1
+    @feedback (send) ->
+      send 0
+      (it, old=0) ->
+        send old + 1
 
   delay: (ms) ~>
-    Signal (send) ~>
-      @lift (value) -> _.delay (-> send value), ms
+    @new (send) -> (value) ->
+      _.delay (-> send value), ms
 
   throttle: (ms) ~>
-    Signal (send) ~>
-      @lift _.throttle (-> send it), ms
+    @new (send) ->
+      new_send = _.throttle (-> send it), ms
+      -> new_send it
+
+  debounce: (ms) ~>
+    @new (send) ->
+      new_send = _.debounce (-> send it), ms
+      -> new_send it
 
   latch: (ms) ~>
     signal = Signal (send) ~>
@@ -69,7 +78,7 @@ API.SignalClass = class SignalClass
 
   __: (key, title = '') -> # log helper
     @keep-when Keyboard.is-down key
-      .lift -> ___ prefix, it.toString()
+      .lift -> ___ title, it.toString()
     this
 
 API.Merge = Merge = (def, signals) ->

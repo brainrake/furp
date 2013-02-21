@@ -21,15 +21,18 @@ if (typeof window == 'undefined' || window === null) {
       var send, this$ = this;
       this.sampleOn = bind$(this, 'sampleOn', prototype);
       this.latch = bind$(this, 'latch', prototype);
+      this.debounce = bind$(this, 'debounce', prototype);
       this.throttle = bind$(this, 'throttle', prototype);
       this.delay = bind$(this, 'delay', prototype);
       this.count = bind$(this, 'count', prototype);
       this.merge = bind$(this, 'merge', prototype);
       this.dropRepeats = bind$(this, 'dropRepeats', prototype);
       this.foldp = bind$(this, 'foldp', prototype);
+      this.feedback = bind$(this, 'feedback', prototype);
       this.keepWhen = bind$(this, 'keepWhen', prototype);
       this.keepIf = bind$(this, 'keepIf', prototype);
       this.lift = bind$(this, 'lift', prototype);
+      this['new'] = bind$(this, 'new', prototype);
       this._targets = [];
       setup(send = function(it){
         var i$, ref$, len$, handle;
@@ -43,58 +46,75 @@ if (typeof window == 'undefined' || window === null) {
         return it;
       });
     }
-    prototype.lift = function(fn){
+    prototype['new'] = function(fn){
       var this$ = this;
       return Signal(function(send){
+        var new_send;
+        new_send = fn(send);
         this$._targets.push(function(it){
-          return send(fn(it));
+          return new_send(it);
         });
         if (this$._state != null) {
-          return send(fn(this$._state));
+          return new_send(this$._state);
         }
       });
     };
-    prototype.keepIf = function(test){
+    prototype.lift = function(fn){
       var this$ = this;
+      return this['new'](function(send){
+        return function(it){
+          return send(fn(it));
+        };
+      });
+    };
+    prototype.keepIf = function(test){
       test == null && (test = function(it){
         return it;
       });
-      return Signal(function(send){
-        return this$.lift(function(it){
-          return test(it) && send(it);
-        });
+      return this.lift(function(it){
+        if (test(it)) {
+          return it;
+        } else {
+          return void 8;
+        }
       });
     };
     prototype.keepWhen = function(signal){
-      var memo;
-      memo = void 8;
-      signal.lift(function(it){
-        return memo = it;
-      });
       return this.keepIf(function(){
-        return memo;
+        return signal._state;
+      });
+    };
+    prototype.feedback = function(fn){
+      var signal;
+      return signal = this['new'](function(send){
+        var new_send;
+        new_send = fn(send);
+        return function(it){
+          switch (false) {
+          case (signal != null ? signal._state : void 8) == null:
+            return new_send(it, signal._state);
+          default:
+            return new_send(it, void 8);
+          }
+        };
       });
     };
     prototype.foldp = function(def, fn){
-      var memo, this$ = this;
-      memo = def;
-      return Signal(function(send){
-        return this$.lift(function(value){
-          memo = fn(value, memo);
-          return send(memo);
-        });
+      return this.feedback(function(send){
+        return function(it, old){
+          old == null && (old = def);
+          return send(fn(it, old));
+        };
       });
     };
     prototype.dropRepeats = function(){
-      var memo, this$ = this;
-      memo = void 8;
-      return Signal(function(send){
-        return this$.lift(function(it){
-          if (!_.isEqual(it, memo)) {
-            send(it);
+      return this.feedback(function(send){
+        return function(it, old){
+          old == null && (old = void 8);
+          if (!_.isEqual(it, old)) {
+            return send(it);
           }
-          return memo = it;
-        });
+        };
       });
     };
     prototype.merge = function(){
@@ -103,26 +123,43 @@ if (typeof window == 'undefined' || window === null) {
       return Merge(this._state, [this].concat(slice$.call(signals)));
     };
     prototype.count = function(){
-      return this.foldp(0, function(value, memo){
-        return memo + 1;
+      return this.feedback(function(send){
+        send(0);
+        return function(it, old){
+          old == null && (old = 0);
+          return send(old + 1);
+        };
       });
     };
     prototype.delay = function(ms){
-      var this$ = this;
-      return Signal(function(send){
-        return this$.lift(function(value){
+      return this['new'](function(send){
+        return function(value){
           return _.delay(function(){
             return send(value);
           }, ms);
-        });
+        };
       });
     };
     prototype.throttle = function(ms){
-      var this$ = this;
-      return Signal(function(send){
-        return this$.lift(_.throttle(function(it){
+      return this['new'](function(send){
+        var new_send;
+        new_send = _.throttle(function(it){
           return send(it);
-        }, ms));
+        }, ms);
+        return function(it){
+          return new_send(it);
+        };
+      });
+    };
+    prototype.debounce = function(ms){
+      return this['new'](function(send){
+        var new_send;
+        new_send = _.debounce(function(it){
+          return send(it);
+        }, ms);
+        return function(it){
+          return new_send(it);
+        };
       });
     };
     prototype.latch = function(ms){
@@ -157,7 +194,7 @@ if (typeof window == 'undefined' || window === null) {
     prototype.__ = function(key, title){
       title == null && (title = '');
       this.keepWhen(Keyboard.isDown(key)).lift(function(it){
-        return ___(prefix, it.toString());
+        return ___(title, it.toString());
       });
       return this;
     };
