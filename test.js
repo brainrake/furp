@@ -14,9 +14,13 @@ if (typeof window == 'undefined' || window === null) {
     var i$, ref$, len$, e, results$ = [];
     $('[data-signal]').each(function(i, el){
       var signal;
-      signal = eval($(el).attr('data-signal'));
-      return signal.lift(function(it){
-        return $(el).text(it);
+      return signal = eval($(el).attr('data-signal')).lift(function(it){
+        $(el).text(it);
+        return $(el).addClass('red');
+      }).latch(100).keepIf(function(it){
+        return !it;
+      }).lift(function(){
+        return $(el).removeClass('red');
       });
     });
     DomEvent('click', '#lang button').lift(function(it){

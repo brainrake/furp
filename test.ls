@@ -6,7 +6,13 @@ __ = -> console.log ...arguments;  it
 $ ->
   $ '[data-signal]' .each (i, el) ->
     signal = eval ($ el).attr \data-signal
-    signal.lift -> ($ el).text it
+      .lift ->
+        $ el .text it
+        $ el .addClass 'red'
+      .latch 100
+      .keep-if -> not it
+      .lift -> $ el .removeClass 'red'
+
 
   DomEvent \click '#lang button'
     .lift -> it.target.innerText
