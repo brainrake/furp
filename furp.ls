@@ -11,14 +11,14 @@ API.SignalClass = class SignalClass
       if it? => for handle in @_targets => handle ...arguments
       it
 
-  new: (fn) ~>
+  new: (fun) ~>
     Signal (send) ~>
-      new_send = (fn send)
+      new_send = (fun send)
       @_targets.push -> new_send it
       if @_state? then new_send @_state
 
-  lift: (fn) ~>
-    @new (send) ~> ~> send fn it
+  lift: (fun) ~>
+    @new (send) -> -> send fun it
 
   keep-if: (test = -> it) ~>
     @lift -> if test it then it else undefined
@@ -26,12 +26,11 @@ API.SignalClass = class SignalClass
   keep-when: (signal) ~>
     @keep-if -> signal._state
 
-  feedback: (fn) ~>
+  feedback: (fun) ~>
     signal = @new (send) ->
-      new_send = (fn send)
-      (it) ->
-        | signal?_state? => new_send it, signal._state
-        | _              => new_send it, void
+      new_send = (fun send)
+      -> | signal?_state? => new_send it, signal._state
+         | _              => new_send it, void
 
   foldp: (def, fn) ~>
     @feedback (send) -> (it, old=def) ->
@@ -47,8 +46,7 @@ API.SignalClass = class SignalClass
   count: ~>
     @feedback (send) ->
       send 0
-      (it, old=0) ->
-        send old + 1
+      (it, old=0) -> send old + 1
 
   delay: (ms) ~>
     @new (send) -> (value) ->

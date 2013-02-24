@@ -46,11 +46,11 @@ if (typeof window == 'undefined' || window === null) {
         return it;
       });
     }
-    prototype['new'] = function(fn){
+    prototype['new'] = function(fun){
       var this$ = this;
       return Signal(function(send){
         var new_send;
-        new_send = fn(send);
+        new_send = fun(send);
         this$._targets.push(function(it){
           return new_send(it);
         });
@@ -59,11 +59,10 @@ if (typeof window == 'undefined' || window === null) {
         }
       });
     };
-    prototype.lift = function(fn){
-      var this$ = this;
+    prototype.lift = function(fun){
       return this['new'](function(send){
         return function(it){
-          return send(fn(it));
+          return send(fun(it));
         };
       });
     };
@@ -84,11 +83,11 @@ if (typeof window == 'undefined' || window === null) {
         return signal._state;
       });
     };
-    prototype.feedback = function(fn){
+    prototype.feedback = function(fun){
       var signal;
       return signal = this['new'](function(send){
         var new_send;
-        new_send = fn(send);
+        new_send = fun(send);
         return function(it){
           switch (false) {
           case (signal != null ? signal._state : void 8) == null:
