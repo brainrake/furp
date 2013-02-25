@@ -1,17 +1,12 @@
-if (typeof window == 'undefined' || window === null) {
-  require('prelude-ls').installPrelude(global);
-} else {
-  prelude.installPrelude(window);
-}
 (function(){
-  var ___, API, Signal, SignalClass, Merge, Lift, Scan, DomEvent, Keyboard, Mouse, Time, slice$ = [].slice;
+  var ___, API, Signal, SignalClass, Merge, Lift, Const, DomEvent, Keyboard, Mouse, Time, slice$ = [].slice;
   import$(this, prelude);
   ___ = function(it){
     console.log.apply(console, arguments);
     return it;
   };
   (window || (typeof module != 'undefined' && module !== null ? module.exports : void 8)).furp = API || (API = {});
-  API.Signal = Signal = function(it){
+  Signal = function(it){
     return new SignalClass(it);
   };
   API.SignalClass = SignalClass = (function(){
@@ -28,6 +23,7 @@ if (typeof window == 'undefined' || window === null) {
       this.merge = bind$(this, 'merge', prototype);
       this.dropRepeats = bind$(this, 'dropRepeats', prototype);
       this.foldp = bind$(this, 'foldp', prototype);
+      this.control = bind$(this, 'control', prototype);
       this.feedback = bind$(this, 'feedback', prototype);
       this.keepWhen = bind$(this, 'keepWhen', prototype);
       this.keepIf = bind$(this, 'keepIf', prototype);
@@ -51,9 +47,7 @@ if (typeof window == 'undefined' || window === null) {
       return Signal(function(send){
         var new_send;
         new_send = fun(send);
-        this$._targets.push(function(it){
-          return new_send(it);
-        });
+        this$._targets.push(new_send);
         if (this$._state != null) {
           return new_send(this$._state);
         }
@@ -73,14 +67,12 @@ if (typeof window == 'undefined' || window === null) {
       return this.lift(function(it){
         if (test(it)) {
           return it;
-        } else {
-          return void 8;
         }
       });
     };
     prototype.keepWhen = function(signal){
       return this.keepIf(function(){
-        return signal._state;
+        return signal != null ? signal._state : void 8;
       });
     };
     prototype.feedback = function(fun){
@@ -89,31 +81,31 @@ if (typeof window == 'undefined' || window === null) {
         var new_send;
         new_send = fun(send);
         return function(it){
-          switch (false) {
-          case (signal != null ? signal._state : void 8) == null:
-            return new_send(it, signal._state);
-          default:
-            return new_send(it, void 8);
-          }
+          return new_send(it, signal != null ? signal._state : void 8);
         };
       });
     };
-    prototype.foldp = function(def, fn){
+    prototype.control = function(signal_fun, fun){
       return this.feedback(function(send){
         return function(it, old){
-          old == null && (old = def);
-          return send(fn(it, old));
+          var other, ref$;
+          other = (ref$ = signal_fun()) != null ? ref$._state : void 8;
+          return send(fun(it, other));
+        };
+      });
+    };
+    prototype.foldp = function(fun){
+      return this.feedback(function(send){
+        return function(it, old){
+          return send(fun(it, old));
         };
       });
     };
     prototype.dropRepeats = function(){
-      return this.feedback(function(send){
-        return function(it, old){
-          old == null && (old = void 8);
-          if (!_.isEqual(it, old)) {
-            return send(it);
-          }
-        };
+      return this.foldp(function(it, old){
+        if (!_.isEqual(it, old)) {
+          return it;
+        } else {}
       });
     };
     prototype.merge = function(){
@@ -141,29 +133,21 @@ if (typeof window == 'undefined' || window === null) {
     };
     prototype.throttle = function(ms){
       return this['new'](function(send){
-        var new_send;
-        new_send = _.throttle(function(it){
+        return _.throttle(function(it){
           return send(it);
         }, ms);
-        return function(it){
-          return new_send(it);
-        };
       });
     };
     prototype.debounce = function(ms){
       return this['new'](function(send){
-        var new_send;
-        new_send = _.debounce(function(it){
+        return _.debounce(function(it){
           return send(it);
         }, ms);
-        return function(it){
-          return new_send(it);
-        };
       });
     };
     prototype.latch = function(ms){
-      var signal, this$ = this;
-      signal = Signal(function(send){
+      var this$ = this;
+      return Signal(function(send){
         var sendNo;
         sendNo = _.debounce(function(){
           return send(false);
@@ -172,41 +156,29 @@ if (typeof window == 'undefined' || window === null) {
           send(true);
           return sendNo();
         });
-      });
-      return signal.dropRepeats();
+      }).dropRepeats();
     };
     prototype.sampleOn = function(signal, fn){
-      var state, this$ = this;
+      var this$ = this;
       fn == null && (fn = function(it){
         return it;
       });
-      state = void 8;
-      this.lift(function(it){
-        return state = it;
-      });
       return Signal(function(send){
         return signal.lift(function(it){
-          return send(fn(state, it));
+          return send(fn(this$._state, it));
         });
       });
     };
-    prototype.__ = function(key, title){
-      title == null && (title = '');
-      this.keepWhen(Keyboard.isDown(key)).lift(function(it){
-        return ___(title, it.toString());
-      });
-      return this;
-    };
     return SignalClass;
   }());
-  API.Merge = Merge = function(def, signals){
+  API.Merge = Merge = function(signals){
     return Signal(function(send){
-      var i$, ref$, len$, signal;
+      var i$, ref$, len$, signal, results$ = [];
       for (i$ = 0, len$ = (ref$ = signals).length; i$ < len$; ++i$) {
         signal = ref$[i$];
-        signal.lift(fn$);
+        results$.push(signal.lift(fn$));
       }
-      return send(def);
+      return results$;
       function fn$(it){
         return send(it);
       }
@@ -237,7 +209,11 @@ if (typeof window == 'undefined' || window === null) {
       }
     });
   });
-  Scan = function(){};
+  API.Const = Const = function(value){
+    return Signal(function(send){
+      return send(value);
+    });
+  };
   API.DomEvent = DomEvent = function(event, el){
     el == null && (el = document);
     return Signal(function(send){
@@ -251,12 +227,11 @@ if (typeof window == 'undefined' || window === null) {
     Keyboard.displayName = 'Keyboard';
     var prototype = Keyboard.prototype, constructor = Keyboard;
     Keyboard.isDown = function(key, el){
-      var keyCode, o, value, event;
+      var keyCode, o, event;
       keyCode = _.isString(key) ? key.charCodeAt(0) : key;
-      return Merge(false, o = (function(){
+      return Const(false).merge(o = (function(){
         var i$, ref$, len$, results$ = [];
         for (i$ = 0, len$ = (ref$ = ['keydown', 'keyup']).length; i$ < len$; ++i$) {
-          value = i$;
           event = ref$[i$];
           results$.push(DomEvent(event, el).keepIf(fn$).lift(fn1$));
         }
@@ -312,12 +287,21 @@ if (typeof window == 'undefined' || window === null) {
     function Keyboard(){}
     return Keyboard;
   }());
+  API.SignalClass.prototype.__ = function(key, title){
+    title == null && (title = '');
+    this.keepWhen(function(){
+      return Keyboard.isDown(key);
+    }).lift(function(it){
+      return ___(title, it.toString());
+    });
+    return this;
+  };
   API.Mouse = Mouse = (function(){
     Mouse.displayName = 'Mouse';
     var prototype = Mouse.prototype, constructor = Mouse;
     Mouse.position = function(el){
       var o, event;
-      return Merge([0, 0], o = (function(){
+      return Const([0, 0]).merge(o = (function(){
         var i$, ref$, len$, results$ = [];
         for (i$ = 0, len$ = (ref$ = ['mousemove', 'mousedown', 'mouseup']).length; i$ < len$; ++i$) {
           event = ref$[i$];
@@ -333,7 +317,7 @@ if (typeof window == 'undefined' || window === null) {
     };
     Mouse.isDown = function(el){
       var o, event;
-      return Merge(false, o = (function(){
+      return Const(false).merge(o = (function(){
         var i$, ref$, len$, results$ = [];
         for (i$ = 0, len$ = (ref$ = ['mousedown', 'mouseup']).length; i$ < len$; ++i$) {
           event = ref$[i$];
@@ -346,11 +330,11 @@ if (typeof window == 'undefined' || window === null) {
       }()));
     };
     Mouse.isClicked = function(el){
-      return Signal(function(send){
-        return DomEvent('click', el).lift(function(){
+      return DomEvent('click', el)['new'](function(send){
+        return function(){
           send(true);
           return send(false);
-        });
+        };
       });
     };
     Mouse.clicks = function(el){
@@ -363,18 +347,15 @@ if (typeof window == 'undefined' || window === null) {
     Time.displayName = 'Time';
     var prototype = Time.prototype, constructor = Time;
     Time.frame = function(){
-      if (this._frame == null) {
-        this._frame = Signal(function(send){
-          var fn;
-          fn = function(){
-            return requestAnimationFrame(function(it){
-              send(it);
-              return fn();
-            });
-          };
-          return fn();
-        });
-      }
+      this._frame == null && Signal(function(send){
+        var fn;
+        return (fn = function(){
+          return requestAnimationFrame(function(it){
+            fn();
+            return send(it);
+          });
+        })();
+      });
       return this._frame;
     };
     Time.delta = function(){};

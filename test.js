@@ -1,8 +1,3 @@
-if (typeof window == 'undefined' || window === null) {
-  require('prelude-ls').installPrelude(global);
-} else {
-  prelude.installPrelude(window);
-}
 (function(){
   var __;
   import$(this, furp);
