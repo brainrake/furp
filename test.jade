@@ -25,120 +25,121 @@ html
             button.btn(type="button") ls
             button.btn(type="button") all
 
-    #ct.container.cs
-      .row.all
-        .span4: h4.text-center javascript
-        .span4: h4.text-center coffeescript
-        .span4: h4.text-center livescript
-      .row
-        h3.all keyboard
-          small &nbsp; press space
-        .span4.js
-          h3.noall keyboard
+    .container
+      #ct.cs
+        .row.all
+          .span4: h4.text-center javascript
+          .span4: h4.text-center coffeescript
+          .span4: h4.text-center livescript
+        .row
+          h3.all keyboard
             small &nbsp; press space
-          pre Keyboard.isDown(32)
-            span.pull-right(data-signal="Keyboard.isDown(32)")
-          pre Keyboard.isDown(' ')
-            span.pull-right(data-signal="Keyboard.isDown(' ')")
-          pre Keyboard.arrows()
-            span.pull-right(data-signal="Keyboard.arrows()")
-          pre
-            |Keyboard.presses(' ')
-            |  .delay(500)
-            |  .count()
-            span.pull-right(data-signal="Keyboard.presses(' ').delay(500).count()")
-        .span4.cs
-          h3.noall keyboard
-            small &nbsp; press space
-          pre Keyboard.isDown 32
-            span.pull-right(data-signal="Keyboard.isDown(32)")
-          pre Keyboard.isDown ' '
-            span.pull-right(data-signal="Keyboard.isDown(' ')")
-          pre Keyboard.arrows()
-            span.pull-right(data-signal="Keyboard.arrows()")
-          pre
-            |Keyboard.presses ' '
-            |  .delay 500
-            |  .count()
-            span.pull-right(data-signal="Keyboard.presses(' ').delay(500).count()")
-        .span4.ls
-          h3.noall keyboard
-            small &nbsp; press space
-          pre Keyboard.isDown 32
-            span.pull-right(data-signal="Keyboard.isDown(32)")
-          pre Keyboard.isDown ' '
-            span.pull-right(data-signal="Keyboard.isDown(' ')")
-          pre Keyboard.arrows!
-            span.pull-right(data-signal='Keyboard.arrows()')
-          pre
-            |Keyboard.presses ' '
-            |  .delay 500
-            |  .count!
-            span.pull-right(data-signal="Keyboard.presses(' ').delay(500).count()")
+          .span4.js
+            h3.noall keyboard
+              small &nbsp; press space
+            pre Keyboard.isDown(32)
+              span.pull-right(data-signal="Keyboard.isDown(32)")
+            pre Keyboard.isDown(' ')
+              span.pull-right(data-signal="Keyboard.isDown(' ')")
+            pre Keyboard.arrows()
+              span.pull-right(data-signal="Keyboard.arrows()")
+            pre
+              |Keyboard.presses(' ')
+              |  .delay(500)
+              |  .count()
+              span.pull-right(data-signal="Keyboard.presses(' ').delay(500).count()")
+          .span4.cs
+            h3.noall keyboard
+              small &nbsp; press space
+            pre Keyboard.isDown 32
+              span.pull-right(data-signal="Keyboard.isDown(32)")
+            pre Keyboard.isDown ' '
+              span.pull-right(data-signal="Keyboard.isDown(' ')")
+            pre Keyboard.arrows()
+              span.pull-right(data-signal="Keyboard.arrows()")
+            pre
+              |Keyboard.presses ' '
+              |  .delay 500
+              |  .count()
+              span.pull-right(data-signal="Keyboard.presses(' ').delay(500).count()")
+          .span4.ls
+            h3.noall keyboard
+              small &nbsp; press space
+            pre Keyboard.isDown 32
+              span.pull-right(data-signal="Keyboard.isDown(32)")
+            pre Keyboard.isDown ' '
+              span.pull-right(data-signal="Keyboard.isDown(' ')")
+            pre Keyboard.arrows!
+              span.pull-right(data-signal='Keyboard.arrows()')
+            pre
+              |Keyboard.presses ' '
+              |  .delay 500
+              |  .count!
+              span.pull-right(data-signal="Keyboard.presses(' ').delay(500).count()")
 
-        h3.all mouse
-        .span4.js
-          h3.noall mouse
-          pre Mouse.position()
-            span.pull-right(data-signal='Mouse.position()')
-          pre Mouse.isDown()
-            span.pull-right(data-signal='Mouse.isDown()')
-          pre
-            |Mouse.position()
-            |  .sampleOn(Mouse.clicks())
-            span.pull-right(data-signal='Mouse.position().sampleOn(furp.Mouse.clicks())')
-          pre
-            |Mouse.position()
-            |  .latch(1000)
-            span.pull-right(data-signal="Mouse.position().latch(1000)")
-        .span4.cs
-          h3.noall mouse
-          pre Mouse.position()
-            span.pull-right(data-signal='Mouse.position()')
-          pre Mouse.isDown()
-            span.pull-right(data-signal='Mouse.isDown()')
-          pre
-            |Mouse.position()
-            |  .sampleOn Mouse.clicks()
-            span.pull-right(data-signal='Mouse.position().sampleOn(furp.Mouse.clicks())')
-          pre
-            |Mouse.position()
-            |  .latch 1000
-            span.pull-right(data-signal="Mouse.position().latch(1000)")
-        .span4.ls
-          h3.noall mouse
-          pre Mouse.position!
-            span.pull-right(data-signal='Mouse.position()')
-          pre Mouse.isDown!
-            span.pull-right(data-signal='Mouse.isDown()')
-          pre
-            |Mouse.position!
-            |  .sampleOn Mouse.clicks!
-            span.pull-right(data-signal='Mouse.position().sampleOn(furp.Mouse.clicks())')
-          pre
-            |Mouse.position!
-            |  .latch 1000
-            span.pull-right(data-signal="Mouse.position().latch(1000)")
+          h3.all mouse
+          .span4.js
+            h3.noall mouse
+            pre Mouse.position()
+              span.pull-right(data-signal='Mouse.position()')
+            pre Mouse.isDown()
+              span.pull-right(data-signal='Mouse.isDown()')
+            pre
+              |Mouse.position()
+              |  .sampleOn(Mouse.clicks())
+              span.pull-right(data-signal='Mouse.position().sampleOn(furp.Mouse.clicks())')
+            pre
+              |Mouse.position()
+              |  .latch(1000)
+              span.pull-right(data-signal="Mouse.position().latch(1000)")
+          .span4.cs
+            h3.noall mouse
+            pre Mouse.position()
+              span.pull-right(data-signal='Mouse.position()')
+            pre Mouse.isDown()
+              span.pull-right(data-signal='Mouse.isDown()')
+            pre
+              |Mouse.position()
+              |  .sampleOn Mouse.clicks()
+              span.pull-right(data-signal='Mouse.position().sampleOn(furp.Mouse.clicks())')
+            pre
+              |Mouse.position()
+              |  .latch 1000
+              span.pull-right(data-signal="Mouse.position().latch(1000)")
+          .span4.ls
+            h3.noall mouse
+            pre Mouse.position!
+              span.pull-right(data-signal='Mouse.position()')
+            pre Mouse.isDown!
+              span.pull-right(data-signal='Mouse.isDown()')
+            pre
+              |Mouse.position!
+              |  .sampleOn Mouse.clicks!
+              span.pull-right(data-signal='Mouse.position().sampleOn(furp.Mouse.clicks())')
+            pre
+              |Mouse.position!
+              |  .latch 1000
+              span.pull-right(data-signal="Mouse.position().latch(1000)")
 
-        h3.all time
-        .span4.js
-          h3.noall time
-          pre
-            |Time.frame()
-            |  .lift(Math.round)
-            span.pull-right(data-signal="Time.frame().lift(Math.round)")
-        .span4.cs
-          h3.noall time
-          pre
-            |Time.frame()
-            |  .lift Math.round
-            span.pull-right(data-signal="Time.frame().lift(Math.round)")
-        .span4.ls
-          h3.noall time
-          pre
-            |Time.frame!
-            |  .lift Math.round
-            span.pull-right(data-signal="Time.frame().lift(Math.round)")
+          h3.all time
+          .span4.js
+            h3.noall time
+            pre
+              |Time.frame()
+              |  .lift(Math.round)
+              span.pull-right(data-signal="Time.frame().lift(Math.round)")
+          .span4.cs
+            h3.noall time
+            pre
+              |Time.frame()
+              |  .lift Math.round
+              span.pull-right(data-signal="Time.frame().lift(Math.round)")
+          .span4.ls
+            h3.noall time
+            pre
+              |Time.frame!
+              |  .lift Math.round
+              span.pull-right(data-signal="Time.frame().lift(Math.round)")
 
     script(src="components/prelude-ls/prelude-browser.js")
     script(src="components/lodash/lodash.js")
