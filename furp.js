@@ -1,8 +1,3 @@
-if (typeof window == 'undefined' || window === null) {
-  require('prelude-ls').installPrelude(global);
-} else {
-  prelude.installPrelude(window);
-}
 (function(){
   var ___, API, Signal, SignalClass, Merge, Lift, Scan, DomEvent, Keyboard, Mouse, Time, slice$ = [].slice;
   import$(this, prelude);
