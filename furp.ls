@@ -7,8 +7,9 @@ API.SignalClass = class SignalClass
   (setup) ->
     @_targets = []
     setup send = ~>
-      @_state = it
-      if it? => for handle in @_targets => handle ...arguments
+      if it?
+        @_state = it
+        for handle in @_targets => handle ...arguments
       it
 
   new: (fun) ~>
@@ -33,28 +34,31 @@ API.SignalClass = class SignalClass
 
   control: (signal_fun, fun) ~>
     @feedback (send) -> (it, old) ->
-      other = signal_fun!?_state
-      send fun it, other
+      send fun it, signal_fun!?_state
 
   foldp: (fun) ~>
     @feedback (send) -> (it, old) ->
       send fun it, old
-    #signal = @control (-> signal), (it, old) -> fun it, old
 
   drop-repeats: ~>
-    @foldp (it, old) -> if not _.isEqual it, old then it else void
+    @feedback (send) -> (it, old) ->
+      if not (_.isEqual it, old) then send it
 
-  merge: (...signals) ~>
-    Merge @_state, [this, ...signals]
+  merge: (signals) ~>
+    Merge [this] ++ signals
 
   count: ~>
     @feedback (send) ->
       send 0
       (it, old=0) -> send old + 1
 
+  sample-on: (signal, fn = -> it) ~>
+    signal.new (send) ~> ~>
+      send fn @_state, it
+
   delay: (ms) ~>
     @new (send) -> (value) ->
-      _.delay (-> send value), ms
+      setTimeout (-> send value), ms
 
   throttle: (ms) ~>
     @new (send) ->
@@ -70,9 +74,6 @@ API.SignalClass = class SignalClass
       @lift -> send yes; send-no!
     .drop-repeats!
 
-  sample-on: (signal, fn = -> it) ~>
-    Signal (send) ~>
-      signal.lift ~> send fn @_state, it
 
 API.Merge = Merge = (signals) ->
   Signal (send) ->
@@ -109,7 +110,7 @@ API.Keyboard = class Keyboard
     .drop-repeats!
 
   @is-pressed = (keyCode, el) ->
-    Signal (send) ->
+    Signal (send) ->  # TODO
       Keyboard.isDown keyCode, el
         .keep-if!
         .lift -> send yes; send no
@@ -147,8 +148,8 @@ API.Mouse = class Mouse
 
 API.Time = class Time
   @frame = ->
-    @_frame ? Signal (send) ->
+    @_frame ?= Signal (send) ->
       do fn = -> requestAnimationFrame (-> fn!; send it)
     @_frame
   @delta = ->
-    #@frame!feedback (send) -> (it, old) -> send it
+    @frame!feedback (send) -> (it, old) -> send it

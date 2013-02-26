@@ -1,5 +1,5 @@
 (function(){
-  var ___, API, Signal, SignalClass, Merge, Lift, Const, DomEvent, Keyboard, Mouse, Time, slice$ = [].slice;
+  var ___, API, Signal, SignalClass, Merge, Lift, Const, DomEvent, Keyboard, Mouse, Time;
   import$(this, prelude);
   ___ = function(it){
     console.log.apply(console, arguments);
@@ -14,11 +14,11 @@
     var prototype = SignalClass.prototype, constructor = SignalClass;
     function SignalClass(setup){
       var send, this$ = this;
-      this.sampleOn = bind$(this, 'sampleOn', prototype);
       this.latch = bind$(this, 'latch', prototype);
       this.debounce = bind$(this, 'debounce', prototype);
       this.throttle = bind$(this, 'throttle', prototype);
       this.delay = bind$(this, 'delay', prototype);
+      this.sampleOn = bind$(this, 'sampleOn', prototype);
       this.count = bind$(this, 'count', prototype);
       this.merge = bind$(this, 'merge', prototype);
       this.dropRepeats = bind$(this, 'dropRepeats', prototype);
@@ -32,8 +32,8 @@
       this._targets = [];
       setup(send = function(it){
         var i$, ref$, len$, handle;
-        this$._state = it;
         if (it != null) {
+          this$._state = it;
           for (i$ = 0, len$ = (ref$ = this$._targets).length; i$ < len$; ++i$) {
             handle = ref$[i$];
             handle.apply(null, arguments);
@@ -88,9 +88,8 @@
     prototype.control = function(signal_fun, fun){
       return this.feedback(function(send){
         return function(it, old){
-          var other, ref$;
-          other = (ref$ = signal_fun()) != null ? ref$._state : void 8;
-          return send(fun(it, other));
+          var ref$;
+          return send(fun(it, (ref$ = signal_fun()) != null ? ref$._state : void 8));
         };
       });
     };
@@ -102,16 +101,16 @@
       });
     };
     prototype.dropRepeats = function(){
-      return this.foldp(function(it, old){
-        if (!_.isEqual(it, old)) {
-          return it;
-        } else {}
+      return this.feedback(function(send){
+        return function(it, old){
+          if (!_.isEqual(it, old)) {
+            return send(it);
+          }
+        };
       });
     };
-    prototype.merge = function(){
-      var signals;
-      signals = slice$.call(arguments);
-      return Merge(this._state, [this].concat(slice$.call(signals)));
+    prototype.merge = function(signals){
+      return Merge([this].concat(signals));
     };
     prototype.count = function(){
       return this.feedback(function(send){
@@ -122,10 +121,21 @@
         };
       });
     };
+    prototype.sampleOn = function(signal, fn){
+      var this$ = this;
+      fn == null && (fn = function(it){
+        return it;
+      });
+      return signal['new'](function(send){
+        return function(it){
+          return send(fn(this$._state, it));
+        };
+      });
+    };
     prototype.delay = function(ms){
       return this['new'](function(send){
         return function(value){
-          return _.delay(function(){
+          return setTimeout(function(){
             return send(value);
           }, ms);
         };
@@ -157,17 +167,6 @@
           return sendNo();
         });
       }).dropRepeats();
-    };
-    prototype.sampleOn = function(signal, fn){
-      var this$ = this;
-      fn == null && (fn = function(it){
-        return it;
-      });
-      return Signal(function(send){
-        return signal.lift(function(it){
-          return send(fn(this$._state, it));
-        });
-      });
     };
     return SignalClass;
   }());
@@ -347,7 +346,7 @@
     Time.displayName = 'Time';
     var prototype = Time.prototype, constructor = Time;
     Time.frame = function(){
-      this._frame == null && Signal(function(send){
+      this._frame == null && (this._frame = Signal(function(send){
         var fn;
         return (fn = function(){
           return requestAnimationFrame(function(it){
@@ -355,10 +354,16 @@
             return send(it);
           });
         })();
-      });
+      }));
       return this._frame;
     };
-    Time.delta = function(){};
+    Time.delta = function(){
+      return this.frame().feedback(function(send){
+        return function(it, old){
+          return send(it);
+        };
+      });
+    };
     function Time(){}
     return Time;
   }());
