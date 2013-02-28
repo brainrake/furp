@@ -20,6 +20,7 @@
       this.delay = bind$(this, 'delay', prototype);
       this.sampleOn = bind$(this, 'sampleOn', prototype);
       this.count = bind$(this, 'count', prototype);
+      this.merges = bind$(this, 'merges', prototype);
       this.merge = bind$(this, 'merge', prototype);
       this.dropRepeats = bind$(this, 'dropRepeats', prototype);
       this.foldp = bind$(this, 'foldp', prototype);
@@ -27,6 +28,7 @@
       this.feedback = bind$(this, 'feedback', prototype);
       this.keepWhen = bind$(this, 'keepWhen', prototype);
       this.keepIf = bind$(this, 'keepIf', prototype);
+      this.lift2 = bind$(this, 'lift2', prototype);
       this.lift = bind$(this, 'lift', prototype);
       this['new'] = bind$(this, 'new', prototype);
       this._targets = [];
@@ -60,6 +62,9 @@
         };
       });
     };
+    prototype.lift2 = function(fun, signal){
+      return Lift(fun, [this, signal]);
+    };
     prototype.keepIf = function(test){
       test == null && (test = function(it){
         return it;
@@ -89,7 +94,7 @@
       return this.feedback(function(send){
         return function(it, old){
           var ref$;
-          return send(fun(it, (ref$ = signal_fun()) != null ? ref$._state : void 8));
+          return send(fun(it, (ref$ = signal_fun()) != null ? ref$._state : void 8, old));
         };
       });
     };
@@ -109,7 +114,10 @@
         };
       });
     };
-    prototype.merge = function(signals){
+    prototype.merge = function(signal){
+      return Merge([this, signal]);
+    };
+    prototype.merges = function(signals){
       return Merge([this].concat(signals));
     };
     prototype.count = function(){
@@ -228,7 +236,7 @@
     Keyboard.isDown = function(key, el){
       var keyCode, o, event;
       keyCode = _.isString(key) ? key.charCodeAt(0) : key;
-      return Const(false).merge(o = (function(){
+      return Const(false).merges(o = (function(){
         var i$, ref$, len$, results$ = [];
         for (i$ = 0, len$ = (ref$ = ['keydown', 'keyup']).length; i$ < len$; ++i$) {
           event = ref$[i$];
@@ -300,7 +308,7 @@
     var prototype = Mouse.prototype, constructor = Mouse;
     Mouse.position = function(el){
       var o, event;
-      return Const([0, 0]).merge(o = (function(){
+      return Const([0, 0]).merges(o = (function(){
         var i$, ref$, len$, results$ = [];
         for (i$ = 0, len$ = (ref$ = ['mousemove', 'mousedown', 'mouseup']).length; i$ < len$; ++i$) {
           event = ref$[i$];
@@ -316,7 +324,7 @@
     };
     Mouse.isDown = function(el){
       var o, event;
-      return Const(false).merge(o = (function(){
+      return Const(false).merges(o = (function(){
         var i$, ref$, len$, results$ = [];
         for (i$ = 0, len$ = (ref$ = ['mousedown', 'mouseup']).length; i$ < len$; ++i$) {
           event = ref$[i$];

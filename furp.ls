@@ -21,6 +21,9 @@ API.SignalClass = class SignalClass
   lift: (fun) ~>
     @new (send) -> -> send fun it
 
+  lift2: (fun, signal) ~>
+    Lift fun, [this, signal]
+
   keep-if: (test = -> it) ~>
     @lift -> it if test it
 
@@ -34,7 +37,7 @@ API.SignalClass = class SignalClass
 
   control: (signal_fun, fun) ~>
     @feedback (send) -> (it, old) ->
-      send fun it, signal_fun!?_state
+      send fun it, signal_fun!?_state, old
 
   foldp: (fun) ~>
     @feedback (send) -> (it, old) ->
@@ -44,7 +47,10 @@ API.SignalClass = class SignalClass
     @feedback (send) -> (it, old) ->
       if not (_.isEqual it, old) then send it
 
-  merge: (signals) ~>
+  merge: (signal) ~>
+    Merge [this, signal]
+
+  merges: (signals) ~>
     Merge [this] ++ signals
 
   count: ~>
@@ -103,7 +109,7 @@ API.DomEvent = DomEvent = (event, el = document) ->
 API.Keyboard = class Keyboard
   @is-down = (key, el) ->
     keyCode = if _.isString key then key.charCodeAt 0 else key
-    Const off .merge o= for event in [\keydown \keyup]
+    Const off .merges o= for event in [\keydown \keyup]
       DomEvent event, el
         .keep-if -> it?keyCode == keyCode
         .lift -> it?type == \keydown
@@ -135,10 +141,10 @@ API.SignalClass.prototype.__ = (key, title = '') -> # log helper
 
 API.Mouse = class Mouse
   @position = (el) ->
-    Const [0 0] .merge o= for event in [\mousemove \mousedown \mouseup]
+    Const [0 0] .merges o= for event in [\mousemove \mousedown \mouseup]
       DomEvent event, el .lift -> [it.pageX, it.pageY] if it?
   @is-down = (el) ->
-    Const no .merge o= for event in [\mousedown \mouseup]
+    Const no .merges o= for event in [\mousedown \mouseup]
       DomEvent event, el .lift -> it?type is \mousedown
   @is-clicked = (el) ->
     DomEvent \click, el .new (send) -> -> send yes; send no
