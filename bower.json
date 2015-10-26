@@ -1,4 +1,5 @@
 {
+  "name": "furp",
   "dependencies": {
     "jquery": "~1.9.1",
     "lodash": "~1.0.0",
